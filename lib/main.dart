@@ -1,7 +1,11 @@
-// import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-// import 'package:http/http.dart' as http;
+import 'dart:convert';
+// import 'package:flutter/rendering.dart';
+import 'package:http/http.dart' as http show Response, get;
+
+import 'package:get_pics/models/image.dart';
+import 'package:get_pics/widgets/image_list.dart';
+import 'package:get_pics/widgets/image_grid.dart';
 
 import 'package:get_pics/util/api.dart';
 
@@ -26,42 +30,53 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  List<String> _imageList;
-
+  int _count = 0;
+  List<ImageModel> images = <ImageModel>[];
   String _orientation = 'list';
 
-  @override
-  void initState() {
-    super.initState();
-    _imageList = <String>['$API/400/200'];
-    _orientation = 'list';
+  // @override
+  // void initState() {
+  //   super.initState();
+  // }
+
+  Future<void> _fetchImage() async {
+    _count++;
+
+    final http.Response response =
+        await http.get('https://jsonplaceholder.typicode.com/photos/$_count');
+
+    final ImageModel data = ImageModel.fromJson(jsonDecode(response.body));
+
+    setState(() {
+      images.add(data);
+    });
   }
 
-  Widget _renderImage() {
-    if (_orientation == 'grid') {
-      return GridView.builder(
-        itemCount: _imageList.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 8.0,
-          mainAxisSpacing: 8.0,
-        ),
-        itemBuilder: (BuildContext context, int index) {
-          return Image.network(_imageList[index]);
-        },
-      );
-    } else {
-      return ListView.builder(
-        itemCount: _imageList.length,
-        itemBuilder: (BuildContext context, int index) {
-          return Container(
-            margin: const EdgeInsets.symmetric(vertical: 4.0),
-            child: Image.network(_imageList[index]),
-          );
-        },
-      );
-    }
-  }
+  // Widget _renderImage() {
+  //   if (_orientation == 'grid') {
+  //     return GridView.builder(
+  //       itemCount: images.length,
+  //       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+  //         crossAxisCount: 3,
+  //         crossAxisSpacing: 8.0,
+  //         mainAxisSpacing: 8.0,
+  //       ),
+  //       itemBuilder: (BuildContext context, int index) {
+  //         return Image.network(images[index]['url']);
+  //       },
+  //     );
+  //   } else {
+  //     return ListView.builder(
+  //       itemCount: images.length,
+  //       itemBuilder: (BuildContext context, int index) {
+  //         return Container(
+  //           margin: const EdgeInsets.symmetric(vertical: 4.0),
+  //           child: Image.network(images[index]),
+  //         );
+  //       },
+  //     );
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +99,7 @@ class _HomeState extends State<Home> {
             icon: Icon(Icons.delete),
             onPressed: () {
               setState(() {
-                _imageList.clear();
+                images.clear();
               });
             },
           ),
@@ -92,17 +107,9 @@ class _HomeState extends State<Home> {
       ),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {
-          setState(() {
-            _imageList.add('$API/400/200');
-          });
-        },
+        onPressed: () => _fetchImage(),
       ),
-      body: Container(
-        margin: const EdgeInsets.all(8.0),
-        child: _renderImage(),
-        // Text('Showing as $_orientation'.toUpperCase()),
-      ),
+      body: _orientation == 'list' ? ImageList(images) : ImageGrid(images),
     );
   }
 }
